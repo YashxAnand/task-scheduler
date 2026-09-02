@@ -21,6 +21,8 @@ public class OnceTask<T> implements ITask {
         try {
             T result = function.get();
             System.out.printf("Execution of task : %s completed. Result: %s\n", taskId, result.toString());
+
+            this.nextExecution = 0l;
         } catch (Exception e) {
         }
     }

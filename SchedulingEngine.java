@@ -31,10 +31,10 @@ public class SchedulingEngine {
     }
 
     public void submit(ITask task){
-        long currentNextExecutionTime = taskQueue.peek().getNextExecutionTime();
         lock.lock();
 
         try {
+            long currentNextExecutionTime = !taskQueue.isEmpty()?taskQueue.peek().getNextExecutionTime():Long.MAX_VALUE;
             taskQueue.offer(task);
 
             if (taskQueue.size() == 1) {
@@ -78,9 +78,24 @@ public class SchedulingEngine {
 
                     ITask taskToExecute = taskQueue.poll();
                     
-                    if(!cancelledTasks.contains(taskToExecute.getTaskId()))
-                        executor.execute(taskToExecute);
+                    cancelSetLock.lock();
 
+                    try{
+                        if(!cancelledTasks.contains(taskToExecute.getTaskId())){
+                            executor.execute(taskToExecute);
+
+                            long nextExecutionTime = taskToExecute.getNextExecutionTime();
+
+                            if(nextExecutionTime > 0l)
+                                taskQueue.offer(taskToExecute);
+                        }else{
+                            cancelledTasks.remove(taskToExecute.getTaskId());
+                        }
+                    }catch(Exception e){
+                        taskQueue.offer(taskToExecute);
+                    }finally{
+                        cancelSetLock.unlock();
+                    }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     break;
