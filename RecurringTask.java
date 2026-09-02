@@ -3,7 +3,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 
-public class RecurringTask<T> implements ITask, Runnable{
+public class RecurringTask<T> implements ITask {
     private final String taskId;
     private long initialDelay;
     private long intervalM;
