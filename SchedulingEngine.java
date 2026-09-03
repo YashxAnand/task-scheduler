@@ -61,6 +61,19 @@ public class SchedulingEngine {
         }
     }
 
+    private boolean isCancelled(String taskId){
+        cancelSetLock.lock();
+
+        try {
+            return cancelledTasks.contains(taskId);
+        } catch (Exception e) {
+        }finally{
+            cancelSetLock.unlock();
+        }
+        
+        return true;
+    }
+
     public void start(){
         new Thread(() -> {
             while (true) {
@@ -72,29 +85,23 @@ public class SchedulingEngine {
 
                     long nextTaskExecutionTime = taskQueue.peek().getNextExecutionTime();
 
-                    while (taskQueue.peek().getNextExecutionTime() > System.currentTimeMillis()) {
-                        waitCondition.await(Math.max(0l, nextTaskExecutionTime), TimeUnit.MILLISECONDS);
+                    while (nextTaskExecutionTime > System.currentTimeMillis()) {
+                        waitCondition.await(Math.max(0l, nextTaskExecutionTime - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
                     }
 
                     ITask taskToExecute = taskQueue.poll();
                     
-                    cancelSetLock.lock();
-
-                    try{
-                        if(!cancelledTasks.contains(taskToExecute.getTaskId())){
-                            executor.execute(taskToExecute);
-
+                    if(!isCancelled(taskToExecute.getTaskId())){
+                        executor.execute(()->{
+                            taskToExecute.run();
                             long nextExecutionTime = taskToExecute.getNextExecutionTime();
 
                             if(nextExecutionTime > 0l)
                                 taskQueue.offer(taskToExecute);
-                        }else{
-                            cancelledTasks.remove(taskToExecute.getTaskId());
-                        }
-                    }catch(Exception e){
-                        taskQueue.offer(taskToExecute);
-                    }finally{
-                        cancelSetLock.unlock();
+                        });
+
+                    }else{
+                        cancelledTasks.remove(taskToExecute.getTaskId());
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -105,6 +112,5 @@ public class SchedulingEngine {
             }
         }).start();
 
-        executor.shutdown();
     }
 }
