@@ -9,8 +9,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 
-public class SchedulingEngine<T> {
-    private final PriorityQueue<Task> taskQueue;
+public class SchedulingEngine {
+    private final PriorityQueue<Task<?>> taskQueue;
     private final ReentrantLock lock;
     private final Condition emptyCondition;
     private final Condition waitCondition;
@@ -34,7 +34,7 @@ public class SchedulingEngine<T> {
         this.executor = Executors.newFixedThreadPool(MAX_THREADS, threadFactory);
     }
 
-    public CompletableFuture<T> submit(Task task){
+    public <R> CompletableFuture<R> submit(Task<R> task){
         lock.lock();
 
         try {

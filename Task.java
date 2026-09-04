@@ -2,7 +2,7 @@
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-
+import java.util.concurrent.TimeUnit;
 
 public class Task<T> implements Runnable{
     private SchedulerStrategy strategy;
@@ -18,7 +18,7 @@ public class Task<T> implements Runnable{
         this.taskId = UUID.randomUUID().toString();
         this.initialDelay = initialDelay;
         this.intervalM = intervalM;
-        this.nextExecution = System.nanoTime() + (initialDelay * 1000);
+        this.nextExecution = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(initialDelay);
         this.function = function;
         this.strategy = strategy;
         this.cancelled = false;
