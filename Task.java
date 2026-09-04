@@ -10,6 +10,7 @@ public class Task<T> implements Runnable{
     private long intervalM;
     private long nextExecution;
     private final Supplier<T> function;
+    private volatile boolean cancelled;
 
     public Task(long initialDelay, long intervalM, Supplier<T> function, SchedulerStrategy strategy){
         this.taskId = UUID.randomUUID().toString();
@@ -18,6 +19,7 @@ public class Task<T> implements Runnable{
         this.nextExecution = System.currentTimeMillis() + initialDelay;
         this.function = function;
         this.strategy = strategy;
+        this.cancelled = false;
     }
 
     @Override
@@ -34,4 +36,8 @@ public class Task<T> implements Runnable{
     public String getTaskId(){return this.taskId;}
 
     public long getNextExecutionTime(){return this.nextExecution;}
+
+    public void cancel(){this.cancelled = true;}
+
+    public boolean isCancelled(){return this.cancelled;}
 }
