@@ -1,5 +1,6 @@
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 
@@ -11,6 +12,7 @@ public class Task<T> implements Runnable{
     private long nextExecution;
     private final Supplier<T> function;
     private volatile boolean cancelled;
+    private CompletableFuture<T> future;
 
     public Task(long initialDelay, long intervalM, Supplier<T> function, SchedulerStrategy strategy){
         this.taskId = UUID.randomUUID().toString();
@@ -20,6 +22,7 @@ public class Task<T> implements Runnable{
         this.function = function;
         this.strategy = strategy;
         this.cancelled = false;
+        this.future = new CompletableFuture<>();
     }
 
     @Override
@@ -29,9 +32,13 @@ public class Task<T> implements Runnable{
             System.out.printf("Execution of task : %s completed. Result: %s\n", taskId, result.toString());
 
             this.nextExecution = strategy.getNextExecutionTime(intervalM);
+            this.future.complete(result);
         } catch (Exception e) {
+            this.future.completeExceptionally(e);
         }
     }
+
+    public CompletableFuture<T> getFuture(){return this.future;}
 
     public String getTaskId(){return this.taskId;}
 

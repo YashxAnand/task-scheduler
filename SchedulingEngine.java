@@ -1,5 +1,6 @@
 
 import java.util.PriorityQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -8,7 +9,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 
-public class SchedulingEngine {
+public class SchedulingEngine<T> {
     private final PriorityQueue<Task> taskQueue;
     private final ReentrantLock lock;
     private final Condition emptyCondition;
@@ -33,7 +34,7 @@ public class SchedulingEngine {
         this.executor = Executors.newFixedThreadPool(MAX_THREADS, threadFactory);
     }
 
-    public void submit(Task task){
+    public CompletableFuture<T> submit(Task task){
         lock.lock();
 
         try {
@@ -45,11 +46,15 @@ public class SchedulingEngine {
             } else if (task.getNextExecutionTime() < currentNextExecutionTime) {
                 waitCondition.signal();
             }
+
+            return task.getFuture();
         } catch (Exception e) {
             // To be handled 
         }finally{
             lock.unlock();
         }
+
+        return null;
     }
 
     public void start(){
