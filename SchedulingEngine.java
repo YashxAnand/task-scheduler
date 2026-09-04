@@ -2,6 +2,7 @@
 import java.util.PriorityQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -14,6 +15,7 @@ public class SchedulingEngine {
     private final Condition waitCondition;
     private final ExecutorService executor;
     private final int MAX_THREADS;
+    private final ThreadFactory threadFactory;
     private Thread executorThread;
     private boolean isRunning = false;
 
@@ -22,8 +24,13 @@ public class SchedulingEngine {
         this.lock = new ReentrantLock();
         this.emptyCondition = lock.newCondition();
         this.waitCondition = lock.newCondition();
+        this.threadFactory = runnable->{
+            Thread t = new Thread(runnable);
+            t.setName("TaskScheduler-Worker-" + t.getName());
+            return t;
+        };
         this.MAX_THREADS = maxThreads;
-        this.executor = Executors.newFixedThreadPool(MAX_THREADS);
+        this.executor = Executors.newFixedThreadPool(MAX_THREADS, threadFactory);
     }
 
     public void submit(Task task){
@@ -55,8 +62,8 @@ public class SchedulingEngine {
                         emptyCondition.await();
                     }
 
-                    while (taskQueue.peek().getNextExecutionTime() > System.currentTimeMillis()) {
-                        waitCondition.await(Math.max(0l, taskQueue.peek().getNextExecutionTime() - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
+                    while (taskQueue.peek().getNextExecutionTime() > System.nanoTime()) {
+                        waitCondition.await(Math.max(0l, taskQueue.peek().getNextExecutionTime() - System.nanoTime()), TimeUnit.NANOSECONDS);
                     }
 
                     Task taskToExecute = taskQueue.poll();

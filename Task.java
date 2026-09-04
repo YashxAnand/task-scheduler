@@ -16,7 +16,7 @@ public class Task<T> implements Runnable{
         this.taskId = UUID.randomUUID().toString();
         this.initialDelay = initialDelay;
         this.intervalM = intervalM;
-        this.nextExecution = System.currentTimeMillis() + initialDelay;
+        this.nextExecution = System.nanoTime() + (initialDelay * 1000);
         this.function = function;
         this.strategy = strategy;
         this.cancelled = false;
