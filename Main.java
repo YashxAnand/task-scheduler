@@ -24,6 +24,7 @@ public class Main{
             System.out.println("Success!");
         }).exceptionally(e->{
             System.out.printerr(e.getMessage());
+            return null;
         });
     }
 }
