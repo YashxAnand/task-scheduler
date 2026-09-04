@@ -98,10 +98,8 @@ public class SchedulingEngine {
                         emptyCondition.await();
                     }
 
-                    long nextTaskExecutionTime = taskQueue.peek().getNextExecutionTime();
-
                     while (taskQueue.peek().getNextExecutionTime() > System.currentTimeMillis()) {
-                        waitCondition.await(Math.max(0l, nextTaskExecutionTime - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
+                        waitCondition.await(Math.max(0l, taskQueue.peek().getNextExecutionTime() - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
                     }
 
                     ITask taskToExecute = taskQueue.poll();
