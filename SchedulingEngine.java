@@ -10,7 +10,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 
 public class SchedulingEngine {
-    private final PriorityQueue<ITask> taskQueue;
+    private final PriorityQueue<Task> taskQueue;
     private final ReentrantLock lock;
     private final ReentrantLock cancelSetLock;
     private final Condition emptyCondition;
@@ -22,7 +22,7 @@ public class SchedulingEngine {
     private boolean isRunning = false;
 
     public SchedulingEngine(int maxThreads){
-        this.taskQueue = new PriorityQueue<>((ITask a, ITask b)->Long.compare(a.getNextExecutionTime(), b.getNextExecutionTime()));
+        this.taskQueue = new PriorityQueue<>((Task a, Task b)->Long.compare(a.getNextExecutionTime(), b.getNextExecutionTime()));
         this.lock = new ReentrantLock();
         this.emptyCondition = lock.newCondition();
         this.waitCondition = lock.newCondition();
@@ -32,7 +32,7 @@ public class SchedulingEngine {
         this.executor = Executors.newFixedThreadPool(MAX_THREADS);
     }
 
-    public void submit(ITask task){
+    public void submit(Task task){
         lock.lock();
 
         try {
@@ -102,7 +102,7 @@ public class SchedulingEngine {
                         waitCondition.await(Math.max(0l, taskQueue.peek().getNextExecutionTime() - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
                     }
 
-                    ITask taskToExecute = taskQueue.poll();
+                    Task taskToExecute = taskQueue.poll();
                     
                     if(!isCancelled(taskToExecute.getTaskId())){
                         executor.execute(()->{
